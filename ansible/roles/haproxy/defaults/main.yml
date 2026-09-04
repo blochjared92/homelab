@@ -1,0 +1,6 @@
+---
+haproxy_lb_ip: 10.31.100.1
+haproxy_stats_port: 9000
+
+haproxy_bootstrap: "{{ cluster_bootstrap }}"
+haproxy_control_plane: "{{ cluster_control_plane }}"

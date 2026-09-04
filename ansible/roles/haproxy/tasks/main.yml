@@ -1,0 +1,41 @@
+---
+- name: Install haproxy
+  ansible.builtin.package:
+    name: haproxy
+    state: present
+
+- name: Allow haproxy to connect to any backend port (SELinux)
+  ansible.posix.seboolean:
+    name: haproxy_connect_any
+    state: true
+    persistent: true
+  when: ansible_facts['os_family'] == "RedHat"
+
+- name: Deploy haproxy config
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    owner: root
+    group: root
+    mode: "0644"
+    validate: haproxy -c -f %s
+  notify: Restart haproxy
+
+- name: Enable and start haproxy
+  ansible.builtin.service:
+    name: haproxy
+    state: started
+    enabled: true
+
+- name: Open haproxy ports in firewalld
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop:
+    - 6443/tcp
+    - 22623/tcp
+    - 80/tcp
+    - 443/tcp
+    - "{{ haproxy_stats_port }}/tcp"

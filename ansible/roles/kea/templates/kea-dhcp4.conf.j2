@@ -1,0 +1,36 @@
+{
+  "Dhcp4": {
+    "interfaces-config": {
+      "interfaces": ["{{ kea_interface }}"]
+    },
+    "lease-database": {
+      "type": "memfile",
+      "persist": true,
+      "name": "/var/lib/kea/kea-leases4.csv"
+    },
+    "valid-lifetime": 3600,
+    "subnet4": [
+      {
+        "id": 1,
+        "subnet": "{{ kea_subnet }}",
+        "pools": [
+          { "pool": "{{ kea_pool_start }} - {{ kea_pool_end }}" }
+        ],
+        "option-data": [
+          { "name": "routers", "data": "{{ kea_router }}" },
+          { "name": "domain-name-servers", "data": "{{ kea_dns_server }}" },
+          { "name": "domain-name", "data": "{{ cluster_name }}.{{ base_domain }}" }
+        ],
+        "reservations": [
+{% for r in kea_reservations %}
+          {
+            "hw-address": "{{ r.mac | lower }}",
+            "ip-address": "{{ r.ip }}",
+            "hostname": "{{ r.name }}"
+          }{{ "," if not loop.last }}
+{% endfor %}
+        ]
+      }
+    ]
+  }
+}

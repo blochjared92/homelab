@@ -1,0 +1,14 @@
+$TTL 300
+@   IN  SOA ns1.{{ bind_cluster_name }}.{{ bind_base_domain }}. admin.{{ bind_base_domain }}. (
+        {{ (bind_nodes | string + bind_lb_ip) | hash('md5') | truncate(8, true, '') | int(base=16) }} ; serial
+        3600 ; refresh
+        600  ; retry
+        604800 ; expire
+        300 ) ; minimum
+
+@   IN  NS  ns1.{{ bind_cluster_name }}.{{ bind_base_domain }}.
+
+{% for name, ip in bind_nodes.items() %}
+{{ ip.split('.')[3] }}  IN  PTR  {{ name }}.{{ bind_cluster_name }}.{{ bind_base_domain }}.
+{% endfor %}
+{{ bind_lb_ip.split('.')[3] }}  IN  PTR  lb-01.{{ bind_cluster_name }}.{{ bind_base_domain }}.

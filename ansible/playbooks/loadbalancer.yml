@@ -1,0 +1,10 @@
+---
+- name: Configure the load balancer host
+  hosts: loadbalancer
+  become: true
+  roles:
+    - base
+    - bind
+    - haproxy
+    - kea
+    - router

@@ -1,0 +1,36 @@
+---
+- name: Enable EPEL (RedHat)
+  ansible.builtin.dnf:
+    name: epel-release
+    state: present
+  when: ansible_facts['os_family'] == "RedHat"
+
+- name: Install baseline packages
+  ansible.builtin.package:
+    name: "{{ base_packages + base_extra_packages }}"
+    state: present
+
+- name: Update package cache (Debian)
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  when: ansible_facts['os_family'] == "Debian"
+
+- name: Ensure chrony is running and enabled
+  ansible.builtin.service:
+    name: "{{ 'chrony' if ansible_facts['os_family'] == 'Debian' else 'chronyd' }}"
+    state: started
+    enabled: true
+
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ base_timezone }}"
+
+- name: Configure chrony
+  ansible.builtin.template:
+    src: chrony.conf.j2
+    dest: "{{ '/etc/chrony/chrony.conf' if ansible_facts['os_family'] == 'Debian' else '/etc/chrony.conf' }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart chrony

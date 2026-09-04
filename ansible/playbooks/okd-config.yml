@@ -1,0 +1,25 @@
+---
+- name: Render the OKD install config
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    okd_dir: "{{ lookup('env', 'HOME') }}/homelab/okd"
+    ssh_public_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_ed25519.pub') }}"
+
+  tasks:
+    - name: Create a clean install directory
+      ansible.builtin.file:
+        path: "{{ okd_dir }}/install"
+        state: "{{ item }}"
+        mode: "0755"
+      loop:
+        - absent
+        - directory
+
+    - name: Render install-config.yaml
+      ansible.builtin.template:
+        src: "{{ okd_dir }}/install-config.yaml.j2"
+        dest: "{{ okd_dir }}/install/install-config.yaml"
+        mode: "0600"

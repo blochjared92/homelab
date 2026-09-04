@@ -1,0 +1,7 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+crash*.log
+okd/install/
+okd/bin/
+okd/*.iso

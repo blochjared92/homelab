@@ -1,0 +1,13 @@
+---
+base_packages:
+  - vim
+  - curl
+  - chrony
+  - tcpdump
+base_extra_packages: []
+base_timezone: America/Detroit
+base_chrony_servers:
+  - 0.pool.ntp.org
+  - 1.pool.ntp.org
+  - 2.pool.ntp.org
+base_chrony_conf_path: /etc/chrony/chrony.conf

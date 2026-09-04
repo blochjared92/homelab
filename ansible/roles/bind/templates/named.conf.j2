@@ -1,0 +1,19 @@
+options {
+    listen-on port 53 { 127.0.0.1; {{ bind_lb_ip }}; };
+    directory "/var/named";
+    allow-query { localhost; 10.31.100.0/24; 10.0.0.0/24; };
+    recursion yes;
+    forwarders { {% for f in bind_forwarders %}{{ f }}; {% endfor %} };
+    forward only;
+    dnssec-validation no;
+};
+
+zone "{{ bind_cluster_name }}.{{ bind_base_domain }}" IN {
+    type master;
+    file "forward.zone";
+};
+
+zone "{{ bind_reverse_prefix }}.in-addr.arpa" IN {
+    type master;
+    file "reverse.zone";
+};

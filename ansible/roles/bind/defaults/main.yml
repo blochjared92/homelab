@@ -1,0 +1,9 @@
+---
+bind_cluster_name: ocp
+bind_base_domain: home.lab
+bind_lb_ip: 10.31.100.1
+bind_reverse_prefix: 100.31.10
+bind_forwarders:
+  - 10.0.0.1
+
+bind_nodes: "{{ cluster_bootstrap | combine(cluster_control_plane) }}"

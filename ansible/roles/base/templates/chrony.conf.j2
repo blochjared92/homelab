@@ -1,0 +1,8 @@
+# Managed by Ansible. Local edits will be overwritten.
+{% for server in base_chrony_servers %}
+server {{ server }} iburst
+{% endfor %}
+
+driftfile /var/lib/chrony/chrony.drift
+makestep 1.0 3
+rtcsync

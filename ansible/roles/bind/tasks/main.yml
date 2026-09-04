@@ -1,0 +1,57 @@
+---
+- name: Install bind
+  ansible.builtin.package:
+    name:
+      - bind
+      - bind-utils
+    state: present
+
+- name: Deploy named.conf
+  ansible.builtin.template:
+    src: named.conf.j2
+    dest: /etc/named.conf
+    owner: root
+    group: named
+    mode: "0640"
+  notify: Restart named
+
+- name: Deploy zone files
+  ansible.builtin.template:
+    src: "{{ item.file }}.j2"
+    dest: "/var/named/{{ item.file }}"
+    owner: root
+    group: named
+    mode: "0640"
+    validate: "named-checkzone {{ item.zone }} %s"
+  loop:
+    - { file: forward.zone, zone: "{{ bind_cluster_name }}.{{ bind_base_domain }}" }
+    - { file: reverse.zone, zone: "{{ bind_reverse_prefix }}.in-addr.arpa" }
+  notify: Restart named
+
+- name: Enable and start named
+  ansible.builtin.service:
+    name: named
+    state: started
+    enabled: true
+
+- name: Install firewalld (RedHat)
+  ansible.builtin.package:
+    name:
+      - firewalld
+      - python3-firewall
+    state: present
+  when: ansible_facts['os_family'] == "RedHat"
+
+- name: Ensure firewalld is running (RedHat)
+  ansible.builtin.service:
+    name: firewalld
+    state: started
+    enabled: true
+  when: ansible_facts['os_family'] == "RedHat"
+
+- name: Open DNS in firewalld
+  ansible.posix.firewalld:
+    service: dns
+    permanent: true
+    immediate: true
+    state: enabled

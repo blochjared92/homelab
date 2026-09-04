@@ -1,0 +1,9 @@
+---
+- name: Baseline configuration for all lab VMs
+  hosts: test_vms
+  become: true
+  vars:
+    base_extra_packages:
+      - htop
+  roles:
+    - base

@@ -1,0 +1,13 @@
+---
+cluster_bootstrap:
+  bootstrap: 10.31.100.9
+
+cluster_control_plane:
+  ocp1: 10.31.100.10
+  ocp2: 10.31.100.11
+  ocp3: 10.31.100.12
+
+kea_reservations:
+  - name: ocp1
+    mac: "BC:24:11:F6:04:C5"
+    ip: 10.31.100.10

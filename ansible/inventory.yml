@@ -1,0 +1,17 @@
+"all":
+  "children":
+    "loadbalancer":
+      "hosts":
+        "lb-01":
+          "ansible_host": "10.0.0.220"
+      "vars":
+        "ansible_python_interpreter": "/usr/bin/python3"
+        "ansible_user": "jared"
+        "base_domain": "home.lab"
+        "cluster_name": "ocp"
+        "lb_ip_cluster": "10.31.100.1"
+    "test_vms":
+      "hosts": {}
+      "vars":
+        "ansible_python_interpreter": "/usr/bin/python3"
+        "ansible_user": "jared"

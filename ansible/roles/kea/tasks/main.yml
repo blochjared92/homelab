@@ -1,0 +1,28 @@
+---
+- name: Install kea
+  ansible.builtin.package:
+    name: kea
+    state: present
+
+- name: Deploy kea config
+  ansible.builtin.template:
+    src: kea-dhcp4.conf.j2
+    dest: /etc/kea/kea-dhcp4.conf
+    owner: root
+    group: kea
+    mode: "0640"
+    validate: "kea-dhcp4 -t %s"
+  notify: Restart kea
+
+- name: Enable and start kea
+  ansible.builtin.service:
+    name: kea-dhcp4
+    state: started
+    enabled: true
+
+- name: Open DHCP in firewalld
+  ansible.posix.firewalld:
+    service: dhcp
+    permanent: true
+    immediate: true
+    state: enabled

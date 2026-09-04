@@ -1,0 +1,68 @@
+# Managed by Ansible. Local edits will be overwritten.
+
+global
+    log /dev/log local0
+    maxconn 20000
+    daemon
+
+defaults
+    mode                    tcp
+    log                     global
+    option                  tcplog
+    timeout connect         30s
+    timeout client          1m
+    timeout server          1m
+    retries                 3
+
+listen stats
+    bind *:{{ haproxy_stats_port }}
+    mode http
+    stats enable
+    stats uri /
+    stats refresh 10s
+
+frontend api
+    bind {{ haproxy_lb_ip }}:6443
+    default_backend api
+
+backend api
+    balance source
+{% for name, ip in haproxy_bootstrap.items() %}
+    server {{ name }} {{ ip }}:6443 check inter 1s
+{% endfor %}
+{% for name, ip in haproxy_control_plane.items() %}
+    server {{ name }} {{ ip }}:6443 check inter 1s
+{% endfor %}
+
+frontend machine_config
+    bind {{ haproxy_lb_ip }}:22623
+    default_backend machine_config
+
+backend machine_config
+    balance source
+{% for name, ip in haproxy_bootstrap.items() %}
+    server {{ name }} {{ ip }}:22623 check inter 1s
+{% endfor %}
+{% for name, ip in haproxy_control_plane.items() %}
+    server {{ name }} {{ ip }}:22623 check inter 1s
+{% endfor %}
+
+backend ingress_http
+    balance source
+{% for name, ip in haproxy_control_plane.items() %}
+    server {{ name }} {{ ip }}:80 check inter 1s
+{% endfor %}
+
+backend ingress_https
+    balance source
+{% for name, ip in haproxy_control_plane.items() %}
+    server {{ name }} {{ ip }}:443 check inter 1s
+{% endfor %}
+
+frontend ingress_http
+    bind *:80
+    default_backend ingress_http
+
+frontend ingress_https
+    bind *:443
+    default_backend ingress_https

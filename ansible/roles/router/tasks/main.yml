@@ -1,0 +1,92 @@
+---
+- name: Enable IPv4 forwarding
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    sysctl_set: true
+    state: present
+    reload: true
+
+- name: Put the cluster interface in the internal zone
+  ansible.posix.firewalld:
+    zone: internal
+    interface: "{{ router_internal_interface }}"
+    permanent: true
+    immediate: true
+    state: enabled
+
+- name: Put the LAN interface in the external zone
+  ansible.posix.firewalld:
+    zone: external
+    interface: "{{ router_external_interface }}"
+    permanent: true
+    immediate: true
+    state: enabled
+
+- name: Enable masquerading on the external zone
+  ansible.posix.firewalld:
+    zone: external
+    masquerade: true
+    permanent: true
+    immediate: true
+    state: enabled
+
+- name: Allow forwarding from internal to external
+  ansible.posix.firewalld:
+    zone: internal
+    forward: true
+    permanent: true
+    immediate: true
+    state: enabled
+
+- name: Assign firewalld zones via NetworkManager
+  community.general.nmcli:
+    conn_name: "cloud-init {{ item.iface }}"
+    type: ethernet
+    zone: "{{ item.zone }}"
+    state: present
+  loop:
+    - { iface: eth1, zone: internal }
+    - { iface: eth0, zone: external }
+
+- name: Open cluster services on the internal zone
+  ansible.posix.firewalld:
+    zone: internal
+    service: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop: [dns, dhcp]
+
+- name: Open cluster ports on the internal zone
+  ansible.posix.firewalld:
+    zone: internal
+    port: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop: ["6443/tcp", "22623/tcp", "80/tcp", "443/tcp"]
+
+- name: Create the internal-to-external policy
+  ansible.builtin.command:
+    cmd: firewall-cmd --permanent --new-policy internal-to-external
+  register: policy_create
+  changed_when: policy_create.rc == 0
+  failed_when: policy_create.rc != 0 and 'NAME_CONFLICT' not in policy_create.stderr
+
+- name: Configure the internal-to-external policy
+  ansible.builtin.command:
+    cmd: "firewall-cmd --permanent --policy internal-to-external {{ item }}"
+  loop:
+    - --add-ingress-zone internal
+    - --add-egress-zone external
+    - --set-target ACCEPT
+    - --add-masquerade
+  register: policy_config
+  changed_when: policy_config.rc == 0
+  failed_when: policy_config.rc != 0 and 'ALREADY_ENABLED' not in policy_config.stderr
+
+- name: Reload firewalld
+  ansible.builtin.command:
+    cmd: firewall-cmd --reload
+  changed_when: true
